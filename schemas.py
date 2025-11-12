@@ -1,48 +1,34 @@
 """
-Database Schemas
+Database Schemas for Website Monitoring
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
+Each Pydantic model represents a collection in your MongoDB database.
+Collection name is the lowercase of the class name.
 
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Collections:
+- Category -> "category"
+- Website -> "website"
+- CheckResult -> "checkresult"
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, Field, HttpUrl
+from typing import Optional, List
 
-# Example schemas (replace with your own):
+class Category(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100, description="Nama kategori")
+    color: Optional[str] = Field(None, description="Warna penanda kategori (hex)")
 
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+class Website(BaseModel):
+    name: str = Field(..., min_length=2, max_length=150, description="Nama situs")
+    url: HttpUrl = Field(..., description="URL situs yang dimonitor")
+    category_id: Optional[str] = Field(None, description="ID kategori terkait")
+    keywords: List[str] = Field(default_factory=list, description="Daftar kata kunci untuk dipantau")
+    interval_seconds: int = Field(300, ge=30, le=86400, description="Interval pengecekan dalam detik")
+    is_active: bool = Field(True, description="Apakah monitoring aktif")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
-
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class CheckResult(BaseModel):
+    website_id: str = Field(..., description="ID website")
+    status_code: Optional[int] = Field(None, description="HTTP status code")
+    is_up: bool = Field(False, description="Apakah situs up")
+    response_time_ms: Optional[int] = Field(None, description="Waktu respon dalam ms")
+    keyword_matches: List[str] = Field(default_factory=list, description="Kata kunci yang ditemukan")
+    error: Optional[str] = Field(None, description="Pesan error bila gagal")
